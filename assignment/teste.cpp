@@ -11,23 +11,14 @@
 
 using namespace std;
 
-vector<float> output_weights(HIDDEN_LAYER_SIZE, 0);
-vector<float> hidden_nodes(HIDDEN_LAYER_SIZE, 0);
-
 vector<float> weights(TRAINING_INPUT_SIZE, 0);
 vector<float> inputs(TRAINING_INPUT_SIZE, 0);
 
-int classification = 0;
+vector<float> output_weights(HIDDEN_LAYER_SIZE, 0);
+vector<float> hidden_nodes(HIDDEN_LAYER_SIZE, 0);
+vector<vector<float>> all_hidden_weights(HIDDEN_LAYER_SIZE, weights);
 
-int wibble_classificator(vector<float> training_data){
-	int array_size = training_data.size();
-	int r[] = {0, 1};
-	float label = 0;
-	for(int i = 0; i < array_size; i++){
-		label += (training_data[i] * r[i%2]);
-	}
-	return label > 1;
-}
+int classification = 0;
 
 vector<float> generate_random_array(int size, int bottom_limit, int upper_limit){
 	random_device rd;
@@ -40,6 +31,16 @@ vector<float> generate_random_array(int size, int bottom_limit, int upper_limit)
 		random_numbers[i] = input;
 	}
 	return random_numbers;
+}
+
+int wibble_classificator(vector<float> training_data){
+	int array_size = training_data.size();
+	int r[] = {0, 1};
+	float label = 0;
+	for(int i = 0; i < array_size; i++){
+		label += (training_data[i] * r[i%2]);
+	}
+	return label > 1;
 }
 
 vector<float> generate_training_inputs(){
