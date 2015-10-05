@@ -6,8 +6,8 @@
 #include <vector>
 
 #define TRAINING_INPUT_SIZE 10
-#define TRAINING_SAMPLE_SIZE 10
 #define HIDDEN_LAYER_SIZE TRAINING_INPUT_SIZE/2
+#define ALPHA 0.01
 
 using namespace std;
 
@@ -47,25 +47,20 @@ vector<float> generate_training_inputs(){
 	return generate_random_array(TRAINING_INPUT_SIZE, -1, 1);
 }
 
-void generate_noise(){
-	//For each one of the training samples add some noise
-}
-
 void generate_weights_nodes(){
 	for (int i = 0; i < HIDDEN_LAYER_SIZE; i++) {
-		weights = generate_random_array(TRAINING_INPUT_SIZE, 0, 1);
+		all_hidden_weights[i] = generate_random_array(TRAINING_INPUT_SIZE, 0, 1);
 	}
 }
 
-
 void generate_nodes(){
-	generate_weights_nodes();
 	for (int i = 0; i < HIDDEN_LAYER_SIZE; i++) {
 		for (int j = 0; j < TRAINING_INPUT_SIZE; j++){
-			hidden_nodes[i] += weights[j] * inputs[j];
+			hidden_nodes[i] += all_hidden_weights[i][j] * inputs[j];
 		}
 		float wtx = hidden_nodes[i];  //Weights times the input
 		hidden_nodes[i] = 1 /(1 + exp(wtx)); //Check the use of 1/1+|x| instead of this, depending on the speed
+		cout << "hidden_nodes[" << i << "]: " << hidden_nodes[i] << endl;
 	}
 }
 
@@ -74,7 +69,6 @@ void generate_output_weights(){
 }
 
 float calculate_guess_label(){
-	generate_output_weights();
 	float guess = 0;
 	for(int i = 0; i < HIDDEN_LAYER_SIZE; i++){
 		guess += output_weights[i] * hidden_nodes[i];
@@ -84,17 +78,23 @@ float calculate_guess_label(){
 	return guess;
 }
 
-void calculate_delta(){}
-
-void update_weights(){}
-
-//Return the weights
+void initialize(){
+	generate_weights_nodes();
+	generate_output_weights();
+	inputs = generate_training_inputs();
+}
 
 int main(){
-	inputs = generate_training_inputs();
+	initialize();
 	classification = wibble_classificator(inputs);
 	cout << classification << endl;
 	generate_nodes();
 	cout << calculate_guess_label() << endl;
 	return 0;
 }
+
+// #define TRAINING_SAMPLE_SIZE 10
+
+// void generate_noise() //For each one of the training samples add some noise
+// void calculate_delta(){}
+// void update_weights(){}
