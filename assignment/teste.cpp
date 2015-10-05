@@ -11,9 +11,12 @@
 
 using namespace std;
 
-vector<vector<float>> weights;
+vector<float> output_weights(HIDDEN_LAYER_SIZE, 0);
 vector<float> hidden_nodes(HIDDEN_LAYER_SIZE, 0);
-vector<float> inputs;
+
+vector<float> weights(TRAINING_INPUT_SIZE, 0);
+vector<float> inputs(TRAINING_INPUT_SIZE, 0);
+
 int classification = 0;
 
 int wibble_classificator(vector<float> training_data){
@@ -49,25 +52,35 @@ void generate_noise(){
 
 void generate_weights_nodes(){
 	for (int i = 0; i < HIDDEN_LAYER_SIZE; i++) {
-		weights[i] = generate_random_array(TRAINING_INPUT_SIZE, 0, 1);
+		weights = generate_random_array(TRAINING_INPUT_SIZE, 0, 1);
 	}
 }
 
 
 void generate_nodes(){
+	generate_weights_nodes();
 	for (int i = 0; i < HIDDEN_LAYER_SIZE; i++) {
 		for (int j = 0; j < TRAINING_INPUT_SIZE; j++){
-			hidden_nodes[j] += weights[i][j] * inputs[j];
+			hidden_nodes[i] += weights[j] * inputs[j];
 		}
+		float wtx = hidden_nodes[i];  //Weights times the input
+		hidden_nodes[i] = 1 /(1 + exp(wtx)); //Check the use of 1/1+|x| instead of this, depending on the speed
 	}
 }
 
-void generate_nodes_weights(){
-	//Also random numbers, near to zero
+void generate_output_weights(){
+	output_weights = generate_random_array(HIDDEN_LAYER_SIZE, 0, 1);
 }
 
-void calculate_guess_label(){
-	//Calculate with the sigmoid formula
+float calculate_guess_label(){
+	generate_output_weights();
+	float guess = 0;
+	for(int i = 0; i < HIDDEN_LAYER_SIZE; i++){
+		guess += output_weights[i] * hidden_nodes[i];
+	}
+	float wth = guess;  //Weights times hidden nodes
+	guess = 1 /(1 + exp(wth));
+	return guess;
 }
 
 void calculate_delta(){}
@@ -77,11 +90,10 @@ void update_weights(){}
 //Return the weights
 
 int main(){
-	cout << "teste" << endl;
-	for(int i = 0; i < TRAINING_INPUT_SIZE; i++){
-		inputs = generate_training_inputs();
-		classification = wibble_classificator(inputs);
-		cout << classification << endl;
-	}
+	inputs = generate_training_inputs();
+	classification = wibble_classificator(inputs);
+	cout << classification << endl;
+	generate_nodes();
+	cout << calculate_guess_label() << endl;
 	return 0;
 }
