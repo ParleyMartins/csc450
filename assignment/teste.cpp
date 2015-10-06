@@ -2,12 +2,15 @@
 #include <cstdlib>
 #include <cmath>
 #include <random>
-#include <ctime>
 #include <vector>
+#include <thread>
+
+#define TRAINING_SAMPLE_SIZE 50
 
 #define TRAINING_INPUT_SIZE 1000
 #define HIDDEN_LAYER_SIZE TRAINING_INPUT_SIZE/2
-#define ALPHA 0.01
+
+#define ALPHA 0.1
 
 using namespace std;
 
@@ -55,19 +58,18 @@ void generate_weights_nodes(){
 	}
 }
 
+void generate_output_weights(){
+	output_weights = generate_random_array(HIDDEN_LAYER_SIZE, 0, 1);
+}
+
 void generate_nodes(){
 	for (int i = 0; i < HIDDEN_LAYER_SIZE; i++) {
 		for (int j = 0; j < TRAINING_INPUT_SIZE; j++){
-			hidden_nodes[i] += all_hidden_weights[i][j] * inputs[j];
+			hidden_nodes[i] += (all_hidden_weights[i][j] * inputs[j]);
 		}
 		double wtx = hidden_nodes[i];  //Weights times the input
-		hidden_nodes[i] = 1 /(1 + exp(wtx)); //Check the use of 1/1+|x| instead of this, depending on the speed
+		hidden_nodes[i] = 1 /(1 + exp(-wtx)); //Check the use of 1/1+|x| instead of this, depending on the speed
 	}
-	
-}
-
-void generate_output_weights(){
-	output_weights = generate_random_array(HIDDEN_LAYER_SIZE, 0, 1);
 }
 
 double calculate_guess_label(){
@@ -76,7 +78,7 @@ double calculate_guess_label(){
 		guess += output_weights[i] * hidden_nodes[i];
 	}
 	double wth = guess;  //Weights times hidden nodes
-	guess = 1 /(1 + exp(wth));
+	guess = 1 /(1 + exp(-wth));
 	return guess;
 }
 
@@ -94,15 +96,10 @@ void update_network(double guess, double classification){
 		double node = hidden_nodes[i];
 		hidden_gradients[i] = node * (1 - node) * output_weights[i] * output_gradient;
 		output_weights[i] += (ALPHA * output_gradient * node);
-	}
-
-	for (int i = 0; i < HIDDEN_LAYER_SIZE; i++) {
 		for (int j = 0; j < TRAINING_INPUT_SIZE; j++){
 			all_hidden_weights[i][j] += (ALPHA * hidden_gradients[i] * inputs[j]);
 		}
-	}
-
-	
+	}	
 }
 
 int main(){
@@ -110,33 +107,37 @@ int main(){
 	int classification = 0;
 	double guess = 1;
 	string teste = " ";
-	for(int i = 0; i < 50; i++){
+	for(int i = 0; i < TRAINING_SAMPLE_SIZE; i++){
 		inputs = generate_training_inputs();
 		classification = wibble_classificator(inputs);
+		guess = 2; // Just reassuring the "guess" is big to go in to the loop
 		int j = 0;
-		while(fabs(classification - guess) > 0.000001){
+		while(fabs(classification - guess) > 0.00001){
 			cout << "iteration: "<< i << " " << j << endl;
-			cout << classification << endl;
+			cout << "wibble: " << classification << endl;
 			generate_nodes();
 			double second_guess = calculate_guess_label();
-			cout << second_guess << endl;
-			if(fabs(second_guess - guess) < 0.000001)
+			cout << "NN guess: " << second_guess << endl;
+			// cout << "diference of previous guessing: " << guess - second_guess << endl;
+			if(fabs(guess - second_guess) < 0.0001)
 				break;
 			guess = second_guess;
+			// cout << "error: " << classification - guess << endl;
 			update_network(guess, classification);
 			j++;
 			// cin >> teste;
 		}
+		cout << endl;
 	}
 	for (int i = 0; i < TRAINING_INPUT_SIZE; ++i)
 	{
 		cout << "weights[0][" << i << "]: " << all_hidden_weights[0][i] << endl;
 	}
+
+	unsigned int n = std::thread::hardware_concurrency();
+    std::cout << n << " concurrent threads are supported.\n";
 	return 0;
 }
 
-// #define TRAINING_SAMPLE_SIZE 10
 
 // void generate_noise() //For each one of the training samples add some noise
-// void calculate_delta(){}
-// void update_weights(){}
