@@ -4,13 +4,15 @@
 #include <random>
 #include <vector>
 #include <thread>
+#include <sstream>
+#include <string>
 
-#define TRAINING_SAMPLE_SIZE 50
+#define TRAINING_SAMPLE_SIZE 4000
 
-#define TRAINING_INPUT_SIZE 1000
+#define TRAINING_INPUT_SIZE 20
 #define HIDDEN_LAYER_SIZE TRAINING_INPUT_SIZE/2
 
-#define ALPHA 0.1
+#define ALPHA 0.01
 
 using namespace std;
 
@@ -38,7 +40,7 @@ vector<double> generate_random_array(int size, int bottom_limit, int upper_limit
 	return random_numbers;
 }
 
-int wibble_classificator(vector<double> training_data){
+int wibble_classificator(const vector<double> training_data){
 	int array_size = training_data.size();
 	int r[] = {0, 1};
 	double label = 0;
@@ -75,7 +77,7 @@ void generate_nodes(){
 double calculate_guess_label(){
 	double guess = 0;
 	for(int i = 0; i < HIDDEN_LAYER_SIZE; i++){
-		guess += output_weights[i] * hidden_nodes[i];
+		guess += (output_weights[i] * hidden_nodes[i]);
 	}
 	double wth = guess;  //Weights times hidden nodes
 	guess = 1 /(1 + exp(-wth));
@@ -106,36 +108,22 @@ int main(){
 	initialize();
 	int classification = 0;
 	double guess = 1;
-	string teste = " ";
+	stringstream wibble;
+
 	for(int i = 0; i < TRAINING_SAMPLE_SIZE; i++){
 		inputs = generate_training_inputs();
 		classification = wibble_classificator(inputs);
-		guess = 2; // Just reassuring the "guess" is big to go in to the loop
-		int j = 0;
-		while(fabs(classification - guess) > 0.00001){
-			cout << "iteration: "<< i << " " << j << endl;
-			cout << "wibble: " << classification << endl;
-			generate_nodes();
-			double second_guess = calculate_guess_label();
-			cout << "NN guess: " << second_guess << endl;
-			// cout << "diference of previous guessing: " << guess - second_guess << endl;
-			if(fabs(guess - second_guess) < 0.0001)
-				break;
-			guess = second_guess;
-			// cout << "error: " << classification - guess << endl;
-			update_network(guess, classification);
-			j++;
-			// cin >> teste;
-		}
-		cout << endl;
-	}
-	for (int i = 0; i < TRAINING_INPUT_SIZE; ++i)
-	{
-		cout << "weights[0][" << i << "]: " << all_hidden_weights[0][i] << endl;
+		generate_nodes();
+		guess = calculate_guess_label();
+		update_network(guess, classification);
+
+	
+		// wibble << i << ";";
+		wibble << classification << ";";
+		wibble << guess << ";" << endl;	
 	}
 
-	unsigned int n = std::thread::hardware_concurrency();
-    std::cout << n << " concurrent threads are supported.\n";
+	cout << wibble.str() << endl;
 	return 0;
 }
 
