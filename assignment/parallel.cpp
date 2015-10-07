@@ -113,7 +113,7 @@ void parallel_calculate_nodes(){
 		int limit = HIDDEN_LAYER_SIZE/PROCESSORS;
 		my_threads.push_back(thread(calculate_nodes, (i*limit)+1, limit*(i+1)));
 	}
-	for(unsigned int i = 1; i < PROCESSORS; i++){
+	for(unsigned int i = 0; i < PROCESSORS; i++){
 		my_threads[i].join();
 	}
 }
@@ -124,7 +124,7 @@ void parallel_update_network(double guess, double classification){
 		int limit = HIDDEN_LAYER_SIZE/PROCESSORS;
 		my_threads.push_back(thread(update_network, guess, classification, (i*limit)+1, limit*(i+1)));
 	}
-	for(unsigned int i = 1; i < PROCESSORS; i++){
+	for(unsigned int i = 0; i < PROCESSORS; i++){
 		my_threads[i].join();
 	}
 }
