@@ -9,10 +9,10 @@
 
 #define TRAINING_SAMPLE_SIZE 4000
 
-#define TRAINING_INPUT_SIZE 20
+#define TRAINING_INPUT_SIZE 4000
 #define HIDDEN_LAYER_SIZE TRAINING_INPUT_SIZE/2
 
-#define ALPHA 0.01
+#define ALPHA 0.1
 
 using namespace std;
 
@@ -64,7 +64,7 @@ void generate_output_weights(){
 	output_weights = generate_random_array(HIDDEN_LAYER_SIZE, 0, 1);
 }
 
-void generate_nodes(){
+void calculate_nodes(){
 	for (int i = 0; i < HIDDEN_LAYER_SIZE; i++) {
 		for (int j = 0; j < TRAINING_INPUT_SIZE; j++){
 			hidden_nodes[i] += (all_hidden_weights[i][j] * inputs[j]);
@@ -113,19 +113,13 @@ int main(){
 	for(int i = 0; i < TRAINING_SAMPLE_SIZE; i++){
 		inputs = generate_training_inputs();
 		classification = wibble_classificator(inputs);
-		generate_nodes();
+		calculate_nodes();
 		guess = calculate_guess_label();
 		update_network(guess, classification);
 
 	
-		// wibble << i << ";";
-		wibble << classification << ";";
-		wibble << guess << ";" << endl;	
-	}
-
-	cout << wibble.str() << endl;
+		cout << classification << ";";
+		cout << guess << ";" << endl;
 	return 0;
 }
 
-
-// void generate_noise() //For each one of the training samples add some noise
