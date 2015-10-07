@@ -14,6 +14,8 @@
 
 #define ALPHA 0.1
 
+#define PROCESSORS std::thread::hardware_concurrency()
+
 using namespace std;
 
 vector<double> weights(TRAINING_INPUT_SIZE, 0);
@@ -26,21 +28,20 @@ vector<vector<double>> all_hidden_weights(HIDDEN_LAYER_SIZE, weights);
 
 double gradient = 0;
 
-
-vector<double> generate_random_array(int size, int bottom_limit, int upper_limit){
+vector<double> generate_random_array(int start, int end, int bottom_limit, int upper_limit){
 	random_device rd;
 	mt19937 gen(rd());
 	uniform_real_distribution<double> distribution(bottom_limit, upper_limit);
-	vector<double> random_numbers(size, 0);
-	random_numbers[0] = 1;
-	for(int i = 1; i < size; i++){
+	vector<double> random_numbers(end, 0);
+	for(int i = start; i < end; i++){
 		double input = distribution(gen);
 		random_numbers[i] = input;
 	}
 	return random_numbers;
 }
 
-int wibble_classificator(const vector<double> training_data){
+int wibble_classificator(vector<double> training_data){
+	training_data[0] = 1;
 	int array_size = training_data.size();
 	int r[] = {0, 1};
 	double label = 0;
@@ -51,21 +52,21 @@ int wibble_classificator(const vector<double> training_data){
 }
 
 vector<double> generate_training_inputs(){
-	return generate_random_array(TRAINING_INPUT_SIZE, -1, 1);
+	return generate_random_array(0, TRAINING_INPUT_SIZE, -1, 1);
 }
 
-void generate_weights_nodes(){
-	for (int i = 0; i < HIDDEN_LAYER_SIZE; i++) {
-		all_hidden_weights[i] = generate_random_array(TRAINING_INPUT_SIZE, 0, 1);
+void generate_weights_nodes(int hidden_start = 0, int hidden_end = HIDDEN_LAYER_SIZE){
+	for (int i = hidden_start; i < hidden_end; i++) {
+		all_hidden_weights[i] = generate_random_array(0, TRAINING_INPUT_SIZE, 0, 1);
 	}
 }
 
 void generate_output_weights(){
-	output_weights = generate_random_array(HIDDEN_LAYER_SIZE, 0, 1);
+	output_weights = generate_random_array(0, HIDDEN_LAYER_SIZE, 0, 1);
 }
 
-void calculate_nodes(){
-	for (int i = 0; i < HIDDEN_LAYER_SIZE; i++) {
+void calculate_nodes(int hidden_start, int hidden_end){
+	for (int i = hidden_start; i < hidden_end; i++) {
 		for (int j = 0; j < TRAINING_INPUT_SIZE; j++){
 			hidden_nodes[i] += (all_hidden_weights[i][j] * inputs[j]);
 		}
@@ -74,9 +75,9 @@ void calculate_nodes(){
 	}
 }
 
-double calculate_guess_label(){
+double calculate_guess_label(int hidden_start = 0, int hidden_end = HIDDEN_LAYER_SIZE){
 	double guess = 0;
-	for(int i = 0; i < HIDDEN_LAYER_SIZE; i++){
+	for(int i = hidden_start; i < hidden_end; i++){
 		guess += (output_weights[i] * hidden_nodes[i]);
 	}
 	double wth = guess;  //Weights times hidden nodes
@@ -90,18 +91,42 @@ void initialize(){
 	inputs = generate_training_inputs();
 }
 
-void update_network(double guess, double classification){
+
+void update_network(double guess, double classification, 
+	int hidden_start, int hidden_end){
 	double error = classification - guess;
 	double output_gradient = guess * (1 - guess) * error;
 	
-	for(int i = 0; i < HIDDEN_LAYER_SIZE; i++){
+	for(int i = hidden_start; i < hidden_end; i++){
 		double node = hidden_nodes[i];
 		hidden_gradients[i] = node * (1 - node) * output_weights[i] * output_gradient;
 		output_weights[i] += (ALPHA * output_gradient * node);
 		for (int j = 0; j < TRAINING_INPUT_SIZE; j++){
 			all_hidden_weights[i][j] += (ALPHA * hidden_gradients[i] * inputs[j]);
 		}
-	}	
+	}
+}
+
+void parallel_calculate_nodes(){
+	vector<thread> my_threads;
+	for(unsigned int i = 0; i < PROCESSORS; i++){
+		int limit = HIDDEN_LAYER_SIZE/PROCESSORS;
+		my_threads.push_back(thread(calculate_nodes, (i*limit)+1, limit*(i+1)));
+	}
+	for(unsigned int i = 1; i < PROCESSORS; i++){
+		my_threads[i].join();
+	}
+}
+
+void parallel_update_network(double guess, double classification){
+	vector<thread> my_threads;
+	for(unsigned int i = 0; i < PROCESSORS; i++){
+		int limit = HIDDEN_LAYER_SIZE/PROCESSORS;
+		my_threads.push_back(thread(update_network, guess, classification, (i*limit)+1, limit*(i+1)));
+	}
+	for(unsigned int i = 1; i < PROCESSORS; i++){
+		my_threads[i].join();
+	}
 }
 
 int main(){
@@ -113,13 +138,13 @@ int main(){
 	for(int i = 0; i < TRAINING_SAMPLE_SIZE; i++){
 		inputs = generate_training_inputs();
 		classification = wibble_classificator(inputs);
-		calculate_nodes();
+		parallel_calculate_nodes();
 		guess = calculate_guess_label();
-		update_network(guess, classification);
+		parallel_update_network(guess, classification);
 
 	
 		cout << classification << ";";
 		cout << guess << ";" << endl;
+	}
 	return 0;
 }
-
