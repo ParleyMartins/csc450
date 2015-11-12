@@ -107,12 +107,22 @@ void update_network(double guess, double classification){
 }
 
 int main(){
+	MPI_Init(NULL, NULL);
 	clock_t tStart = clock();
 	initialize();
 	int classification = 0;
 	double guess = 1;
 
 	for(int i = 0; i < TRAINING_SAMPLE_SIZE; i++){
+		int world_size;
+		MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+		if(world_size > 1){
+			int world_rank;
+			MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+			if(world_rank != 0){
+				;		
+			}
+		}
 		inputs = generate_training_inputs();
 		classification = wibble_classificator();
 		// cout << "classification: " << classification << endl;
@@ -128,6 +138,7 @@ int main(){
 	cout << "TRAINING_INPUT_SIZE " << TRAINING_INPUT_SIZE << endl;
 
 	cout << "Execution time:" << excecution_time << "s" << endl;
+	MPI_Finalize();
 	return 0;
 }
 
