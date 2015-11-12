@@ -6,9 +6,9 @@
 #include <string>
 #include <ctime>
 
-#define TRAINING_SAMPLE_SIZE 20000
+#define TRAINING_SAMPLE_SIZE 100
 
-#define TRAINING_INPUT_SIZE 2000
+#define TRAINING_INPUT_SIZE 100
 #define HIDDEN_LAYER_SIZE TRAINING_INPUT_SIZE/2
 
 #define ALPHA 0.1
