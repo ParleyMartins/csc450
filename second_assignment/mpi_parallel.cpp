@@ -64,9 +64,9 @@ void generate_output_weights(){
 	output_weights = generate_random_array(HIDDEN_LAYER_SIZE, 0, 1);
 }
 
-void calculate_nodes(){
-	for (int i = 0; i < HIDDEN_LAYER_SIZE; i++) {
-		for (int j = 0; j < TRAINING_INPUT_SIZE; j++){
+void calculate_nodes(int hidden_layer_start, int hidden_layer_end, int input_start, int input_end){
+	for (int i = hidden_layer_start; i < hidden_layer_end; i++) {
+		for (int j = input_start; j < input_end; j++){
 			hidden_nodes[i] += (all_hidden_weights[i][j] * inputs[j]);
 		}
 		double wtx = hidden_nodes[i];  //Weights times the input
@@ -120,13 +120,12 @@ int main(){
 			int world_rank;
 			MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 			if(world_rank != 0){
-				cout << "Test from rank " << world_rank << endl;		
 			}
 		}
 		inputs = generate_training_inputs();
 		classification = wibble_classificator();
 		// cout << "classification: " << classification << endl;
-		calculate_nodes();
+		calculate_nodes(0, HIDDEN_LAYER_SIZE, 0, TRAINING_INPUT_SIZE);
 		guess = calculate_guess_label();
 		// cout << "guess: " << guess << endl << endl;
 		update_network(guess, classification);
