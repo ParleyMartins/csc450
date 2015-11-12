@@ -4,7 +4,6 @@
 #include <random>
 #include <vector>
 #include <string>
-#include <ctime>
 #include <mpi.h>
 
 #define TRAINING_SAMPLE_SIZE 100
@@ -50,8 +49,8 @@ int wibble_classificator(){
 }
 
 
-vector<double> generate_training_inputs(){
-	return generate_random_array(TRAINING_INPUT_SIZE, -1, 1);
+void generate_training_inputs(){
+	inputs = generate_random_array(TRAINING_INPUT_SIZE, -1, 1);
 }
 
 void generate_weights_nodes(){
@@ -64,24 +63,23 @@ void generate_output_weights(){
 	output_weights = generate_random_array(HIDDEN_LAYER_SIZE, 0, 1);
 }
 
-void calculate_nodes(int hidden_start, int hidden_end, int input_start, int input_end){
-	for (int i = hidden_start; i < hidden_end; i++) {
-		for (int j = input_start; j < input_end; j++){
+void calculate_nodes(int weight_start, int weight_end){
+	for (int i = weight_start; i < weight_end; i++) {
+		hidden_nodes[i] = 0;
+		for (int j = 0; j < TRAINING_INPUT_SIZE; j++){
 			hidden_nodes[i] += (all_hidden_weights[i][j] * inputs[j]);
 		}
 		double wtx = hidden_nodes[i];  //Weights times the input
-		hidden_nodes[i] = 1 /(1 + exp(-wtx)); //Check the use of 1/1+|x| instead of this, depending on the speed
+		hidden_nodes[i] = 1 /(1 + exp(-wtx)); 
 	}
 }
 
-double calculate_guess_label(){
+double calculate_guess_label(int nodes_start, int nodes_end){
 	double guess = 0;
-	for(int i = 0; i < HIDDEN_LAYER_SIZE; i++){
-		// cout <<"i: " << i << " output_weights[i]: "  << output_weights[i] << " hidden_nodes[i]" << hidden_nodes[i] << endl;
+	for(int i = nodes_start; i < nodes_end; i++){
 		guess += (output_weights[i] * hidden_nodes[i]);
 	}
 	double wth = guess;  //Weights times hidden nodes
-	// cout <<"wth: " << wth << endl;
 	guess = 1 /(1 + exp(-wth));
 	return guess;
 }
@@ -89,7 +87,7 @@ double calculate_guess_label(){
 void initialize(){
 	generate_weights_nodes();
 	generate_output_weights();
-	inputs = generate_training_inputs();
+	generate_training_inputs();
 }
 
 void update_network(double guess, double classification){
@@ -108,35 +106,45 @@ void update_network(double guess, double classification){
 
 int main(){
 	MPI_Init(NULL, NULL);
-	clock_t tStart = clock();
 	initialize();
 	int classification = 0;
 	double guess = 1;
-
-	for(int i = 0; i < TRAINING_SAMPLE_SIZE; i++){
-		int world_size;
-		MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-		if(world_size > 1){
-			int world_rank;
-			MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-			if(world_rank != 0){
+	int world_rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+	int world_size;
+	MPI_Comm_rank(MPI_COMM_WORLD, &world_size);
+	cout << world_size << endl;
+	if(world_size > 0){
+		for(int i = 0; i < TRAINING_SAMPLE_SIZE; i++){
+			if(world_rank == world_size-1){
+				generate_training_inputs();
+				classification = wibble_classificator();
+				guess = 0;
+				int limit = HIDDEN_LAYER_SIZE/world_size;
+				for(int j = 0; j < world_size -1; j++){
+					int start = j*limit;
+					int end = limit*(j+1); 
+					MPI_Send(&start, 1, MPI_INT, j, MPI_ANY_TAG, MPI_COMM_WORLD);
+					MPI_Send(&end, 1, MPI_INT, j, MPI_ANY_TAG, MPI_COMM_WORLD);
+				}
+				for(int j = 1; j < world_size; j++){
+					double partial_guess;
+					MPI_Recv(&partial_guess, 1, MPI_DOUBLE, j, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+					guess += partial_guess;
+				}
+				update_network(guess, classification);
+			}else{
+				int start;
+				int end;
+				MPI_Recv(&start, 1, MPI_INT, world_size-1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				MPI_Recv(&end, 1, MPI_INT, world_size-1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				calculate_nodes(start, end);
+				double label = calculate_guess_label(start, end);
+				MPI_Send(&label, 1, MPI_DOUBLE, world_size-1, MPI_ANY_TAG, MPI_COMM_WORLD);
 			}
 		}
-		inputs = generate_training_inputs();
-		classification = wibble_classificator();
-		// cout << "classification: " << classification << endl;
-		calculate_nodes(0, HIDDEN_LAYER_SIZE, 0, TRAINING_INPUT_SIZE);
-		guess = calculate_guess_label();
-		// cout << "guess: " << guess << endl << endl;
-		update_network(guess, classification);
 	}
-
-   
-	double excecution_time = (double)(clock() - tStart)/CLOCKS_PER_SEC;
-	cout << "TRAINING_SAMPLE_SIZE " << TRAINING_SAMPLE_SIZE << endl;
-	cout << "TRAINING_INPUT_SIZE " << TRAINING_INPUT_SIZE << endl;
-
-	cout << "Execution time:" << excecution_time << "s" << endl;
+	cout << "Teste" << endl;
 	MPI_Finalize();
 	return 0;
 }
