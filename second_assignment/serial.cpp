@@ -3,8 +3,6 @@
 #include <cmath>
 #include <random>
 #include <vector>
-#include <thread>
-#include <sstream>
 #include <string>
 #include <ctime>
 
@@ -112,7 +110,6 @@ int main(){
 	initialize();
 	int classification = 0;
 	double guess = 1;
-	stringstream wibble;
 
 	for(int i = 0; i < TRAINING_SAMPLE_SIZE; i++){
 		inputs = generate_training_inputs();

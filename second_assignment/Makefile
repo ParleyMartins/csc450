@@ -1,0 +1,1 @@
+g++ -W -Wall -pedantic -std=c++11 -O2 -o parallel parallel.cpp

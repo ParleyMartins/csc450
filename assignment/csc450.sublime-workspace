@@ -92,19 +92,11 @@
 	"buffers":
 	[
 		{
-			"file": "teste.cpp",
-			"settings":
-			{
-				"buffer_size": 4066,
-				"line_ending": "Windows"
-			}
-		},
-		{
 			"file": "a.txt",
 			"settings":
 			{
-				"buffer_size": 80887,
-				"line_ending": "Unix"
+				"buffer_size": 15820,
+				"line_ending": "Windows"
 			}
 		}
 	],
@@ -169,9 +161,11 @@
 	},
 	"expanded_folders":
 	[
+		"/C/Users/Parley/Documents/GitHub/csc450"
 	],
 	"file_history":
 	[
+		"/C/src/csc450/assignment/teste.cpp",
 		"/C/Users/Parley/Dropbox/teste.txt.txt",
 		"/C/Users/Parley/AppData/Roaming/Sublime Text 3/Packages/User/c++.sublime-build",
 		"/C/Users/Parley/AppData/Roaming/Sublime Text 3/Packages/User/Preferences.sublime-settings",
@@ -232,53 +226,24 @@
 	"groups":
 	[
 		{
-			"selected": 1,
+			"selected": 0,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "teste.cpp",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 4066,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								3379,
-								3379
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/C++/C++.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 1080.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
 					"file": "a.txt",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 80887,
+						"buffer_size": 15820,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								135,
-								135
+								15820,
+								15820
 							]
 						],
 						"settings":
@@ -286,7 +251,7 @@
 							"syntax": "Packages/Text/Plain text.tmLanguage"
 						},
 						"translation.x": 0.0,
-						"translation.y": 52080.0,
+						"translation.y": 15030.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
