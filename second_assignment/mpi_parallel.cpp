@@ -64,8 +64,8 @@ void generate_output_weights(){
 	output_weights = generate_random_array(HIDDEN_LAYER_SIZE, 0, 1);
 }
 
-void calculate_nodes(int hidden_layer_start, int hidden_layer_end, int input_start, int input_end){
-	for (int i = hidden_layer_start; i < hidden_layer_end; i++) {
+void calculate_nodes(int hidden_start, int hidden_end, int input_start, int input_end){
+	for (int i = hidden_start; i < hidden_end; i++) {
 		for (int j = input_start; j < input_end; j++){
 			hidden_nodes[i] += (all_hidden_weights[i][j] * inputs[j]);
 		}
