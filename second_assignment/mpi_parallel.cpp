@@ -107,44 +107,43 @@ void update_network(double guess, double classification){
 int main(){
 	MPI_Init(NULL, NULL);
 	initialize();
-	int classification = 0;
-	double guess = 1;
 	int world_rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	int world_size;
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_size);
-	cout << world_size << endl;
-	if(world_size > 0){
-		for(int i = 0; i < TRAINING_SAMPLE_SIZE; i++){
-			if(world_rank == world_size-1){
+	cout << "Size: [" << world_size << "]" << endl;
+			if(world_rank == 0){
 				generate_training_inputs();
-				classification = wibble_classificator();
-				guess = 0;
-				int limit = HIDDEN_LAYER_SIZE/world_size;
-				for(int j = 0; j < world_size -1; j++){
-					int start = j*limit;
-					int end = limit*(j+1); 
-					MPI_Send(&start, 1, MPI_INT, j, MPI_ANY_TAG, MPI_COMM_WORLD);
-					MPI_Send(&end, 1, MPI_INT, j, MPI_ANY_TAG, MPI_COMM_WORLD);
-				}
-				for(int j = 1; j < world_size; j++){
-					double partial_guess = 0;
-					//MPI_Recv(&partial_guess, 1, MPI_DOUBLE, j, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-					guess += partial_guess;
-				}
-				update_network(guess, classification);
-			}else{
-				int start = 0;
+					int start = 0;
+int j = 2;
+					int end = HIDDEN_LAYER_SIZE;
+int tag = 10; 
+					MPI_Send(&start, 1, MPI_INT, j, tag, MPI_COMM_WORLD);
+					MPI_Send(&end, 1, MPI_INT, j, tag, MPI_COMM_WORLD);
+				cout << "Send start and end" << endl;
+				
+
+			}else 
+	{
+int old = world_size;
+	MPI_Comm_rank(MPI_COMM_WORLD, &world_size);
+	cout << "I'm process " << world_rank << " World Size: [" << old << "] Size after update " << world_size << endl;
+}
+if(world_rank == 2){
+				int start = 20;
 				int end = 1;
-				//MPI_Recv(&start, 1, MPI_INT, world_size-1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				//MPI_Recv(&end, 1, MPI_INT, world_size-1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+int amount = 0;
+				MPI_Status status;
+				MPI_Recv(&start, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+				MPI_Recv(&end, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 				calculate_nodes(start, end);
+MPI_Get_count(&status, MPI_INT, &amount);
+				cout << "Status: [" << amount << "] [" << status.MPI_SOURCE<< "] [" << status.MPI_TAG << "]" << endl;
+cout << "Start: [" << start << "] End [" << end << "]" << endl;
 				//double label = calculate_guess_label(start, end);
 				//MPI_Send(&label, 1, MPI_DOUBLE, world_size-1, MPI_ANY_TAG, MPI_COMM_WORLD);
 			}
-		}
-	}
-	cout << "Teste" << endl;
+	cout << "Finalizing rank " << world_rank << endl;
 	MPI_Finalize();
 	return 0;
 }
