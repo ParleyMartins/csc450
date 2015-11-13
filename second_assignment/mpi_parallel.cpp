@@ -125,7 +125,7 @@ int main(){
 	} else {
 		int old = world_size;
 		MPI_Comm_rank(MPI_COMM_WORLD, &world_size);
-		cout << "I'm process " << world_rank << " World Size: [" << old << "] Size after update " << world_size << endl;
+		cout << "I'm" << world_rank << " World Size: [" << old << "] Size after update " << world_size << endl;
 	} 
 	if(world_rank == 2){
 		int start = 20;
