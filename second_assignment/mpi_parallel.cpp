@@ -128,19 +128,19 @@ int main(){
 					MPI_Send(&end, 1, MPI_INT, j, MPI_ANY_TAG, MPI_COMM_WORLD);
 				}
 				for(int j = 1; j < world_size; j++){
-					double partial_guess;
-					MPI_Recv(&partial_guess, 1, MPI_DOUBLE, j, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+					double partial_guess = 0;
+					//MPI_Recv(&partial_guess, 1, MPI_DOUBLE, j, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 					guess += partial_guess;
 				}
 				update_network(guess, classification);
 			}else{
-				int start;
-				int end;
-				MPI_Recv(&start, 1, MPI_INT, world_size-1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				MPI_Recv(&end, 1, MPI_INT, world_size-1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				int start = 0;
+				int end = 1;
+				//MPI_Recv(&start, 1, MPI_INT, world_size-1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				//MPI_Recv(&end, 1, MPI_INT, world_size-1, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 				calculate_nodes(start, end);
-				double label = calculate_guess_label(start, end);
-				MPI_Send(&label, 1, MPI_DOUBLE, world_size-1, MPI_ANY_TAG, MPI_COMM_WORLD);
+				//double label = calculate_guess_label(start, end);
+				//MPI_Send(&label, 1, MPI_DOUBLE, world_size-1, MPI_ANY_TAG, MPI_COMM_WORLD);
 			}
 		}
 	}
