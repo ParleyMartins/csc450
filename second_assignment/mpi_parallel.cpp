@@ -16,7 +16,7 @@
 using namespace std;
 
 vector<double> weights(TRAINING_INPUT_SIZE, 0);
-vector<double> inputs(TRAINING_INPUT_SIZE, 0);
+double[] inputs;
 
 vector<double> output_weights(HIDDEN_LAYER_SIZE, 0);
 vector<double> hidden_nodes(HIDDEN_LAYER_SIZE, 0);
@@ -37,6 +37,18 @@ vector<double> generate_random_array(int size, int bottom_limit, int upper_limit
 	return random_numbers;
 }
 
+double[] generate_random_array2(int size, int bottom_limit, int upper_limit){
+	random_device rd;
+	mt19937 gen(rd());
+	uniform_real_distribution<double> distribution(bottom_limit, upper_limit);
+	double random_numbers[size];
+	for(int i = 0; i < size; i++){
+		double input = distribution(gen);
+		random_numbers[i] = input;
+	}
+	return random_numbers;
+}
+
 int wibble_classificator(){
 	inputs[0] = 1;
 	int array_size = inputs.size();
@@ -50,7 +62,7 @@ int wibble_classificator(){
 
 
 void generate_training_inputs(){
-	inputs = generate_random_array(TRAINING_INPUT_SIZE, -1, 1);
+	inputs = generate_random_array2(TRAINING_INPUT_SIZE, -1, 1);
 }
 
 void generate_weights_nodes(){
