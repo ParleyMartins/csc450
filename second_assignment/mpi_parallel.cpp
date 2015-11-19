@@ -75,14 +75,16 @@ void calculate_nodes(int weight_start, int weight_end){
 		hidden_nodes[i] = 1 /(1 + exp(-wtx)); 
 	}
 }
-
-double calculate_guess_label(int nodes_start, int nodes_end){
-	double guess = 0;
+double nodes_times_weights(int nodes_start, int nodes_end){
+	double ntw = 0;  //hidden Nodes Times Weights
 	for(int i = nodes_start; i < nodes_end; i++){
-		guess += (output_weights[i] * hidden_nodes[i]);
+		ntw += (output_weights[i] * hidden_nodes[i]);
 	}
-	double wth = guess;  //Weights times hidden nodes
-	guess = 1 /(1 + exp(-wth));
+	return ntw;
+}
+
+double calculate_guess_label(double wth){
+	double guess = 1 /(1 + exp(wth * -1));
 	return guess;
 }
 
@@ -116,23 +118,37 @@ int main(){
 	generate_training_inputs();
 	if(world_rank == world_size - 1){
 		//classification = wibble_classificator();
+		int start = 0;
+		int end = 0;
 		for(int j = 0; j < world_rank; j++){
 			int limit = HIDDEN_LAYER_SIZE/world_size;
-			int start = (j*limit);
-			int end = limit*(j+1);
+			start = (j*limit);
+			end = limit*(j+1);
 			MPI_Send(&start, 1, MPI_INT, j, MPI_TAG, MPI_COMM_WORLD);
 			MPI_Send(&end, 1, MPI_INT, j, MPI_TAG, MPI_COMM_WORLD);
 		}
-		//calculate_nodes();
-		//guess = calculate_guess_label();
-		// cout << "guess: " << guess << endl << endl;
+		start = end;
+		end = HIDDEN_LAYER_SIZE;
+		calculate_nodes(start, end);
+		double guess = nodes_times_weights(start, end);
+		for(int j = 0; j < world_rank; j++){
+			double partial_guess = 0;
+			MPI_Recv(&partial_guess, 1, MPI_DOUBLE, j, MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			cout << "partial_guess: " << partial_guess << endl;
+			guess += partial_guess;
+		}
+		cout << "guess: " << guess << endl << endl;
+		guess = calculate_guess_label(guess);
 		//update_network(guess, classification);
 	} else {
 		int start = 0;
 		int end = 1;
-		MPI_Recv(&start, 1, MPI_INT, world_size - 1, MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		MPI_Recv(&end, 1, MPI_INT, world_size - 1, MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		cout << "start [" << start << "] end ["  << end << "]" << endl;
+		int source = world_size - 1;
+		MPI_Recv(&start, 1, MPI_INT, source, MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Recv(&end, 1, MPI_INT, source, MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		calculate_nodes(start, end);
+		double guess = nodes_times_weights(start, end);
+		MPI_Send(&guess, 1, MPI_DOUBLE, source, MPI_TAG, MPI_COMM_WORLD);
 	}
 	cout << "Finalizing rank " << world_rank << endl;
 	MPI_Finalize();
