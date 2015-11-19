@@ -110,37 +110,8 @@ int main(){
 	int world_rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	int world_size;
-	MPI_Comm_rank(MPI_COMM_WORLD, &world_size);
+	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 	cout << "Size: [" << world_size << "]" << endl;
-	if(world_rank == 0){
-		generate_training_inputs();
-		int start = 0;
-		int j = 2;
-		int end = HIDDEN_LAYER_SIZE;
-		int tag = 10; 
-		MPI_Send(&start, 1, MPI_INT, j, tag, MPI_COMM_WORLD);
-		MPI_Send(&end, 1, MPI_INT, j, tag, MPI_COMM_WORLD);
-		cout << "Send start and end" << endl;
-
-	} else {
-		int old = world_size;
-		MPI_Comm_rank(MPI_COMM_WORLD, &world_size);
-		cout << "I'm" << world_rank << " World Size: [" << old << "] Size after update " << world_size << endl;
-	} 
-	if(world_rank == 2){
-		int start = 20;
-		int end = 1;
-		int amount = 0;
-		MPI_Status status;
-		MPI_Recv(&start, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-		MPI_Recv(&end, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		calculate_nodes(start, end);
-		MPI_Get_count(&status, MPI_INT, &amount);
-		cout << "Status: [" << amount << "] [" << status.MPI_SOURCE<< "] [" << status.MPI_TAG << "]" << endl;
-		cout << "Start: [" << start << "] End [" << end << "]" << endl;
-		//double label = calculate_guess_label(start, end);
-		//MPI_Send(&label, 1, MPI_DOUBLE, world_size-1, MPI_ANY_TAG, MPI_COMM_WORLD);
-	}
 	cout << "Finalizing rank " << world_rank << endl;
 	MPI_Finalize();
 	return 0;
