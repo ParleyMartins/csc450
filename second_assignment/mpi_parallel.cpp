@@ -139,6 +139,7 @@ int main(){
 		}
 		cout << "guess: " << guess << endl << endl;
 		guess = calculate_guess_label(guess);
+		cout << "guess: " << guess << endl << endl;
 		//update_network(guess, classification);
 	} else {
 		int start = 0;
