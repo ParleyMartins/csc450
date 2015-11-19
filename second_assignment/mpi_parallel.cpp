@@ -6,6 +6,8 @@
 #include <string>
 #include <mpi.h>
 
+#define MPI_TAG 0
+
 #define TRAINING_SAMPLE_SIZE 100
 
 #define TRAINING_INPUT_SIZE 100
@@ -111,7 +113,27 @@ int main(){
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	int world_size;
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-	cout << "Size: [" << world_size << "]" << endl;
+	generate_training_inputs();
+	if(world_rank == world_size - 1){
+		//classification = wibble_classificator();
+		for(int j = 0; j < world_rank; j++){
+			int limit = HIDDEN_LAYER_SIZE/world_size;
+			int start = (j*limit);
+			int end = limit*(j+1);
+			MPI_Send(&start, 1, MPI_INT, j, MPI_TAG, MPI_COMM_WORLD);
+			MPI_Send(&end, 1, MPI_INT, j, MPI_TAG, MPI_COMM_WORLD);
+		}
+		//calculate_nodes();
+		//guess = calculate_guess_label();
+		// cout << "guess: " << guess << endl << endl;
+		//update_network(guess, classification);
+	} else {
+		int start = 0;
+		int end = 1;
+		MPI_Recv(&start, 1, MPI_INT, world_size - 1, MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Recv(&end, 1, MPI_INT, world_size - 1, MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		cout << "start [" << start << "] end ["  << end << "]" << endl;
+	}
 	cout << "Finalizing rank " << world_rank << endl;
 	MPI_Finalize();
 	return 0;
