@@ -8,10 +8,9 @@
 
 #define MPI_TAG 0
 
-#define TRAINING_SAMPLE_SIZE 100
+#define TRAINING_SAMPLE_SIZE 1
 
-#define TRAINING_INPUT_SIZE 100
-#define HIDDEN_LAYER_SIZE TRAINING_INPUT_SIZE/2
+#define TRAINING_INPUT_SIZE 20
 
 #define ALPHA 0.1
 
@@ -41,6 +40,7 @@ void calculate_nodes(){
 		for (unsigned int j = 0; j < inputs.size(); j++){
 			hidden_nodes[i] += (weights[j] * inputs[j]);
 		}
+
 		double wtx = hidden_nodes[i];  //Weights times the input
 		hidden_nodes[i] = 1 /(1 + exp(-wtx)); 
 	}
