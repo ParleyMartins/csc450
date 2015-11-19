@@ -6,6 +6,8 @@
 #include <string>
 #include <mpi.h>
 
+#define MPI_TAG 0
+
 #define TRAINING_SAMPLE_SIZE 100
 
 #define TRAINING_INPUT_SIZE 100
@@ -85,14 +87,16 @@ void calculate_nodes(int weight_start, int weight_end){
 		hidden_nodes[i] = 1 /(1 + exp(-wtx)); 
 	}
 }
-
-double calculate_guess_label(int nodes_start, int nodes_end){
-	double guess = 0;
+double nodes_times_weights(int nodes_start, int nodes_end){
+	double ntw = 0;  //hidden Nodes Times Weights
 	for(int i = nodes_start; i < nodes_end; i++){
-		guess += (output_weights[i] * hidden_nodes[i]);
+		ntw += (output_weights[i] * hidden_nodes[i]);
 	}
-	double wth = guess;  //Weights times hidden nodes
-	guess = 1 /(1 + exp(-wth));
+	return ntw;
+}
+
+double calculate_guess_label(double wth){
+	double guess = 1 /(1 + exp(wth * -1));
 	return guess;
 }
 
@@ -122,36 +126,41 @@ int main(){
 	int world_rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	int world_size;
-	MPI_Comm_rank(MPI_COMM_WORLD, &world_size);
-	cout << "Size: [" << world_size << "]" << endl;
-	if(world_rank == 0){
+	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+	for(int i = 0; i < TRAINING_SAMPLE_SIZE; i++){
 		generate_training_inputs();
-		int start = 0;
-		int j = 2;
-		int end = HIDDEN_LAYER_SIZE;
-		int tag = 10; 
-		MPI_Send(&start, 1, MPI_INT, j, tag, MPI_COMM_WORLD);
-		MPI_Send(&end, 1, MPI_INT, j, tag, MPI_COMM_WORLD);
-		cout << "Send start and end" << endl;
-
-	} else {
-		int old = world_size;
-		MPI_Comm_rank(MPI_COMM_WORLD, &world_size);
-		cout << "I'm" << world_rank << " World Size: [" << old << "] Size after update " << world_size << endl;
-	} 
-	if(world_rank == 2){
-		int start = 20;
-		int end = 1;
-		int amount = 0;
-		MPI_Status status;
-		MPI_Recv(&start, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-		MPI_Recv(&end, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		calculate_nodes(start, end);
-		MPI_Get_count(&status, MPI_INT, &amount);
-		cout << "Status: [" << amount << "] [" << status.MPI_SOURCE<< "] [" << status.MPI_TAG << "]" << endl;
-		cout << "Start: [" << start << "] End [" << end << "]" << endl;
-		//double label = calculate_guess_label(start, end);
-		//MPI_Send(&label, 1, MPI_DOUBLE, world_size-1, MPI_ANY_TAG, MPI_COMM_WORLD);
+		if(world_rank == world_size - 1){
+			int classification = wibble_classificator();
+			int start = 0;
+			int end = 0;
+			for(int j = 0; j < world_rank; j++){
+				int limit = HIDDEN_LAYER_SIZE/world_size;
+				start = (j*limit);
+				end = limit*(j+1);
+				MPI_Send(&start, 1, MPI_INT, j, MPI_TAG, MPI_COMM_WORLD);
+				MPI_Send(&end, 1, MPI_INT, j, MPI_TAG, MPI_COMM_WORLD);
+			}
+			start = end;
+			end = HIDDEN_LAYER_SIZE;
+			calculate_nodes(start, end);
+			double guess = nodes_times_weights(start, end);
+			for(int j = 0; j < world_rank; j++){
+				double partial_guess = 0;
+				MPI_Recv(&partial_guess, 1, MPI_DOUBLE, j, MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				guess += partial_guess;
+			}
+			guess = calculate_guess_label(guess);
+			update_network(guess, classification);
+		} else {
+			int start = 0;
+			int end = 1;
+			int source = world_size - 1;
+			MPI_Recv(&start, 1, MPI_INT, source, MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Recv(&end, 1, MPI_INT, source, MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			calculate_nodes(start, end);
+			double guess = nodes_times_weights(start, end);
+			MPI_Send(&guess, 1, MPI_DOUBLE, source, MPI_TAG, MPI_COMM_WORLD);
+		}
 	}
 	cout << "Finalizing rank " << world_rank << endl;
 	MPI_Finalize();
