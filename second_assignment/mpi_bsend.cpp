@@ -15,17 +15,17 @@
 
 using namespace std;
 
-vector<double> weights;
-vector<double> inputs;
+double* weights;
+double* inputs;
 
 vector<double> hidden_weights;
 vector<double> hidden_nodes;
 
-vector<double> generate_random_array(int size, int bottom_limit, int upper_limit){
+double* generate_random_array(int size, int bottom_limit, int upper_limit){
 	random_device rd;
 	mt19937 gen(rd());
 	uniform_real_distribution<double> distribution(bottom_limit, upper_limit);
-	vector<double> random_numbers(size, 0);
+	double* random_numbers = (double*) malloc(sizeof(double) * size);
 	for(int i = 0; i < size; i++){
 		double input = distribution(gen);
 		random_numbers[i] = input;
@@ -33,6 +33,7 @@ vector<double> generate_random_array(int size, int bottom_limit, int upper_limit
 	return random_numbers;
 }
 
+/*
 void calculate_nodes(){
 	for (unsigned int i = 0; i < hidden_nodes.size(); i++) {
 		hidden_nodes[i] = 0;
@@ -44,6 +45,7 @@ void calculate_nodes(){
 		hidden_nodes[i] = 1 /(1 + exp(-wtx)); 
 	}
 }
+*/
 double nodes_times_weights(){
 	double ntw = 0;  //hidden Nodes Times Weights
 	for(unsigned int i = 0; i < hidden_nodes.size(); i++){
@@ -60,9 +62,6 @@ double calculate_guess_label(double wth){
 void initialize(const int size){
 	inputs = generate_random_array(size, -1, 1);
 	weights = generate_random_array(size, 0, 1);
-	int hidden_size = size/2;
-	hidden_weights = generate_random_array(hidden_size, 0, 1); 
-	hidden_nodes.assign(hidden_size, 0);
 }
 
 int main(){
@@ -73,13 +72,13 @@ int main(){
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 	int limit = TRAINING_INPUT_SIZE/world_size;
 	for(int i = 0; i < TRAINING_SAMPLE_SIZE; i++){
-		double *teste = NULL;
 		if(world_rank == 0) {
 			initialize(TRAINING_INPUT_SIZE);	
-			teste = (double *) malloc(sizeof(double)*TRAINING_INPUT_SIZE);
 		}
-		double *teste2 = (double *) malloc(sizeof(double)*limit);
-		MPI_Scatter(teste, limit, MPI_DOUBLE, teste2, limit, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		double *partial_inputs = (double *) malloc(sizeof(double)*limit);
+		double *partial_weights = (double *) malloc(sizeof(double)*limit);
+		MPI_Scatter(inputs, limit, MPI_DOUBLE, partial_inputs, limit, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Scatter(inputs, limit, MPI_DOUBLE, partial_weights, limit, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		
 	}
 	cout << "Finalizing rank " << world_rank << endl;
