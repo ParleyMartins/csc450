@@ -73,10 +73,13 @@ int main(){
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 	int limit = TRAINING_INPUT_SIZE/world_size;
 	for(int i = 0; i < TRAINING_SAMPLE_SIZE; i++){
+		double *teste = NULL;
 		if(world_rank == 0) {
 			initialize(TRAINING_INPUT_SIZE);	
+			teste = (double *) malloc(sizeof(double)*TRAINING_INPUT_SIZE);
 		}
-		MPI_Scatter(inputs, limit, MPI_DOUBLE, inputs, limit, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		double *teste2 = (double *) malloc(sizeof(double)*limit);
+		MPI_Scatter(teste, limit, MPI_DOUBLE, teste2, limit, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		
 	}
 	cout << "Finalizing rank " << world_rank << endl;
