@@ -12,7 +12,6 @@
 
 #define TRAINING_INPUT_SIZE 20
 
-#define ALPHA 0.1
 
 using namespace std;
 
@@ -81,13 +80,16 @@ int main(){
 			for(int j = 0; j < world_rank; j++){
 				double partial_guess = 0;
 				MPI_Recv(&partial_guess, 1, MPI_DOUBLE, j, MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				cout << "Partial Guess: " << partial_guess << endl;
 				guess += partial_guess;
 			}
 			guess = calculate_guess_label(guess);
+			cout << "Guess: " << guess << endl;
 		} else {
 			calculate_nodes();
 			double guess = nodes_times_weights();
-			MPI_Send(&guess, 1, MPI_DOUBLE, world_size - 1, MPI_TAG, MPI_COMM_WORLD);
+			MPI_Request send_request;
+			MPI_Isend(&guess, 1, MPI_DOUBLE, world_size - 1, MPI_TAG, MPI_COMM_WORLD, &send_request);
 		}
 	}
 	cout << "Finalizing rank " << world_rank << endl;
