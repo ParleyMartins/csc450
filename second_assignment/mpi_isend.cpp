@@ -6,7 +6,7 @@
 #include <string>
 #include <mpi.h>
 
-#define TRAINING_INPUT_SIZE 20
+#define INPUT_SIZE 20
 
 
 using namespace std;
@@ -45,25 +45,23 @@ int main(){
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	int world_size;
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-	int limit = TRAINING_INPUT_SIZE/world_size;
+	int limit = INPUT_SIZE/world_size;
 	int MPI_TAG = 0;
-	//for(int i = 0; i < TRAINING_SAMPLE_SIZE; i++){
-		initialize(limit);
-		if(world_rank == world_size - 1){
-			double guess = multiply();
-			for(int j = 0; j < world_rank; j++){
-				double partial_guess = 0;
-				MPI_Recv(&partial_guess, 1, MPI_DOUBLE, j, MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				cout << "Partial Guess: " << partial_guess << endl;
-				guess += partial_guess;
-			}
-			cout << "Guess: " << guess << endl;
-		} else {
-			double guess = multiply();
-			MPI_Request send_request;
-			MPI_Isend(&guess, 1, MPI_DOUBLE, world_size - 1, MPI_TAG, MPI_COMM_WORLD, &send_request);
+	initialize(limit);
+	if(world_rank == world_size - 1){
+		double result = multiply();
+		for(int j = 0; j < world_rank; j++){
+			double partial_results = 0;
+			MPI_Recv(&partial_results, 1, MPI_DOUBLE, j, MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			cout << "Partial Guess: " << partial_results << endl;
+			result += partial_results;
 		}
-//	}
+		cout << "Guess: " << result << endl;
+	} else {
+		double result = multiply();
+		MPI_Request send_request;
+		MPI_Isend(&result, 1, MPI_DOUBLE, world_size - 1, MPI_TAG, MPI_COMM_WORLD, &send_request);
+	}
 	cout << "Finalizing rank " << world_rank << endl;
 	MPI_Finalize();
 	return 0;

@@ -6,21 +6,13 @@
 #include <string>
 #include <mpi.h>
 
-#define MPI_TAG 0
+#define INPUT_SIZE 20
 
-#define TRAINING_SAMPLE_SIZE 1
-
-#define TRAINING_INPUT_SIZE 20
-
-#define ALPHA 0.1
 
 using namespace std;
 
-vector<double> weights;
-vector<double> inputs;
-
-vector<double> hidden_weights;
-vector<double> hidden_nodes;
+vector<double> vector1;
+vector<double> vector2;
 
 vector<double> generate_random_array(int size, int bottom_limit, int upper_limit){
 	random_device rd;
@@ -34,36 +26,17 @@ vector<double> generate_random_array(int size, int bottom_limit, int upper_limit
 	return random_numbers;
 }
 
-void calculate_nodes(){
-	for (unsigned int i = 0; i < hidden_nodes.size(); i++) {
-		hidden_nodes[i] = 0;
-		for (unsigned int j = 0; j < inputs.size(); j++){
-			hidden_nodes[i] += (weights[j] * inputs[j]);
-		}
-
-		double wtx = hidden_nodes[i];  //Weights times the input
-		hidden_nodes[i] = 1 /(1 + exp(-wtx)); 
+double multiply(){
+	double partial_result = 0;
+	for(unsigned int i = 0; i < vector1.size(); i++){
+		partial_result += (vector1[i] * vector2[i]);
 	}
-}
-double nodes_times_weights(){
-	double ntw = 0;  //hidden Nodes Times Weights
-	for(unsigned int i = 0; i < hidden_nodes.size(); i++){
-		ntw += (hidden_weights[i] * hidden_nodes[i]);
-	}
-	return ntw;
-}
-
-double calculate_guess_label(double wth){
-	double guess = 1 /(1 + exp(wth * -1));
-	return guess;
+	return partial_result;
 }
 
 void initialize(const int size){
-	inputs = generate_random_array(size, -1, 1);
-	weights = generate_random_array(size, 0, 1);
-	int hidden_size = size/2;
-	hidden_weights = generate_random_array(hidden_size, 0, 1); 
-	hidden_nodes.assign(hidden_size, 0);
+	vector1.assign(size, 0.5);// = generate_random_array(size, -1, 1);
+	vector2.assign(size, 1);// = generate_random_array(size, 0, 1);
 }
 
 int main(){
@@ -72,23 +45,21 @@ int main(){
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	int world_size;
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-	int limit = TRAINING_INPUT_SIZE/world_size;
-	for(int i = 0; i < TRAINING_SAMPLE_SIZE; i++){
-		initialize(limit);
-		if(world_rank == world_size - 1){
-			calculate_nodes();
-			double guess = nodes_times_weights();
-			for(int j = 0; j < world_rank; j++){
-				double partial_guess = 0;
-				MPI_Recv(&partial_guess, 1, MPI_DOUBLE, j, MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				guess += partial_guess;
-			}
-			guess = calculate_guess_label(guess);
-		} else {
-			calculate_nodes();
-			double guess = nodes_times_weights();
-			MPI_Send(&guess, 1, MPI_DOUBLE, world_size - 1, MPI_TAG, MPI_COMM_WORLD);
+	int limit = INPUT_SIZE/world_size;
+	int MPI_TAG = 0;
+	initialize(limit);
+	if(world_rank == world_size - 1){
+		double result = multiply();
+		for(int j = 0; j < world_rank; j++){
+			double partial_results = 0;
+			MPI_Recv(&partial_results, 1, MPI_DOUBLE, j, MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			cout << "Partial Guess: " << partial_results << endl;
+			result += partial_results;
 		}
+		cout << "Guess: " << result << endl;
+	} else {
+		double result = multiply();
+		MPI_Send(&result, 1, MPI_DOUBLE, world_size - 1, MPI_TAG, MPI_COMM_WORLD);
 	}
 	cout << "Finalizing rank " << world_rank << endl;
 	MPI_Finalize();
