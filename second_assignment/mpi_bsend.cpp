@@ -18,7 +18,7 @@ using namespace std;
 double* weights;
 double* inputs;
 
-vector<double> hidden_weights;
+double* hidden_weights;
 vector<double> hidden_nodes;
 
 double* generate_random_array(int size, int bottom_limit, int upper_limit){
@@ -79,6 +79,10 @@ int main(){
 		double *partial_weights = (double *) malloc(sizeof(double)*limit);
 		MPI_Scatter(inputs, limit, MPI_DOUBLE, partial_inputs, limit, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 		MPI_Scatter(inputs, limit, MPI_DOUBLE, partial_weights, limit, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+		int hidden_limit = limit/2;
+		hidden_nodes.assign(hidden_limit, 0);
+		partial_weights = (double *) malloc(sizeof(double)*hidden_limit);
 		
 	}
 	cout << "Finalizing rank " << world_rank << endl;
