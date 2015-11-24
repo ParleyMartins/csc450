@@ -1,12 +1,8 @@
 #include <iostream>
 #include <cstdlib>
-#include <cmath>
 #include <random>
-#include <vector>
-#include <string>
 #include <mpi.h>
-
-#define INPUT_SIZE 20
+#include <sstream>
 
 using namespace std;
 
@@ -30,12 +26,30 @@ double multiply(int size, double* vector1, double* vector2){
 	return partial_result;
 }
 
-int main(){
-	MPI_Init(NULL, NULL);
+/*
+ * This program consists in implementing a vector multiplication.
+ * Both vectors are generated randomly.
+ */
+
+/*
+ * This function receives the size of the vectors as parameter. If none provided,
+ * it will use 200000 as default 
+ */
+int main(int argc, char* argv[]){
+	// Standard MPI initializers	
+	MPI_Init(&argc, &argv);
 	int world_rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	int world_size;
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+	
+	unsigned int INPUT_SIZE = 200000;
+	//check if a size was given
+	if(argc >= 2){
+		istringstream ss(argv[1]);
+		if(!(ss >> INPUT_SIZE))
+			cerr << "1st argument should be a positive integer" << endl;
+	}
 	int limit = INPUT_SIZE/world_size;
 
 	double* vector1 = NULL;
@@ -43,8 +57,11 @@ int main(){
 	double* partial_results = NULL;
 
 	if(world_rank == 0) {
+		//The first process initializes the values of all the arrays.
 		vector1 = generate_random_array(INPUT_SIZE, 1, 1);
 		vector2 = generate_random_array(INPUT_SIZE, 1, 1);
+
+		//This is here to avoid one more comparison
 		partial_results = (double *) malloc(sizeof(double) * world_size);
 	}
 
