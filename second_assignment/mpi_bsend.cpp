@@ -1,3 +1,8 @@
+/*
+ * This program consists in implementing a vector multiplication.
+ * Both vectors are generated randomly.
+ */
+
 #include <iostream>
 #include <cstdlib>
 #include <random>
@@ -18,6 +23,9 @@ double* generate_random_array(int size, int bottom_limit, int upper_limit){
 	return random_numbers;
 }
 
+/*
+ * Multiply the partial vectors. To avoid global variables, receives both vectors and the size.
+ */
 double multiply(int size, double* vector1, double* vector2){
 	double partial_result = 0;
 	for(int i = 0; i < size; i++){
@@ -25,11 +33,6 @@ double multiply(int size, double* vector1, double* vector2){
 	}
 	return partial_result;
 }
-
-/*
- * This program consists in implementing a vector multiplication.
- * Both vectors are generated randomly.
- */
 
 /*
  * This function receives the size of the vectors as parameter. If none provided,
@@ -78,9 +81,8 @@ int main(int argc, char* argv[]){
 		for(int i = 0; i < world_size; i++){
 			result += partial_results[i];
 		}
-		cout << "Guess: " << result << endl;
+		cout << "Result: " << result << endl;
 	}		
-	cout << "Finalizing rank " << world_rank << endl;
 	MPI_Finalize();
 	return 0;
 }
