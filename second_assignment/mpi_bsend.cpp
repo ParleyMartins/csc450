@@ -10,7 +10,9 @@
 #include <sstream>
 
 using namespace std;
-
+/*
+ * Generates random array (using c++11 library) within given limits
+  */
 double* generate_random_array(int size, int bottom_limit, int upper_limit){
 	random_device rd;
 	mt19937 gen(rd());
@@ -24,7 +26,7 @@ double* generate_random_array(int size, int bottom_limit, int upper_limit){
 }
 
 /*
- * Multiply the partial vectors. To avoid global variables, receives both vectors and the size.
+ * Multiplies the partial vectors. To avoid global variables, receives both vectors and the size.
  */
 double multiply(int size, double* vector1, double* vector2){
 	double partial_result = 0;
@@ -49,12 +51,14 @@ int main(int argc, char* argv[]){
 	unsigned int INPUT_SIZE = 200000;
 	//check if a size was given
 	if(argc >= 2){
+		//Using sstream to convert the value
 		istringstream ss(argv[1]);
 		if(!(ss >> INPUT_SIZE))
 			cerr << "1st argument should be a positive integer" << endl;
 	}
 	int limit = INPUT_SIZE/world_size;
 
+	//Pointers used by the root process to scatter the data
 	double* vector1 = NULL;
 	double* vector2 = NULL;
 	double* partial_results = NULL;
@@ -70,10 +74,13 @@ int main(int argc, char* argv[]){
 
 	double* partial_v1 = (double *) malloc(sizeof(double) * limit);
 	double* partial_v2 = (double *) malloc(sizeof(double) * limit);
+
+	//0 is the root process
 	MPI_Scatter(vector1, limit, MPI_DOUBLE, partial_v1, limit, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Scatter(vector2, limit, MPI_DOUBLE, partial_v2, limit, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 	double partial_result = multiply(limit, partial_v1, partial_v2);
+	// 1 is the amount of data being passed and 0 is the root process in this call
 	MPI_Gather(&partial_result, 1, MPI_DOUBLE, partial_results, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 	if(world_rank == 0){
