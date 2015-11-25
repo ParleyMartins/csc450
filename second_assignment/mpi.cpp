@@ -90,6 +90,14 @@ void scatter_gather(unsigned const int INPUT_SIZE, const int world_size, int wor
 	
 	int* partial_v1 = (int *) malloc(sizeof(int) * sendcounts[world_rank]);
 	int* partial_v2 = (int *) malloc(sizeof(int) * sendcounts[world_rank]);
+	/*
+	 * The Scatterv implementation is, according to the documentation, is equivalent to the send function in
+	 * this program. Because of this, I would prefer to use the standard send/receive instead of the scatterv,
+	 * since this last is much more complicated to read.
+	 * However, when you are certain that the amount of data sent to each process will be the same, using scatter
+	 * may be a good option. As a good point it's easier to read but you will need  more memory to generate
+	 * a receive buffer even for the root process;
+	 */
 	//0 is the root process
 	MPI_Scatterv(vector1, sendcounts, displacements, MPI_INT, partial_v1, sendcounts[world_rank], MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Scatterv(vector2, sendcounts, displacements, MPI_INT, partial_v2, sendcounts[world_rank], MPI_INT, 0, MPI_COMM_WORLD);
