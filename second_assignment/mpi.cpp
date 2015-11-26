@@ -9,6 +9,10 @@
 #include <mpi.h>
 #include <sstream>
 
+#define DEFAULT_SEND 1
+#define SCATTER 2
+#define ISEND
+
 using namespace std;
 /*
  * Generates random array (using c++11 library) within given limits
@@ -36,26 +40,7 @@ double multiply(int size, double* vector1, double* vector2){
 	return partial_result;
 }
 
-/*
- * This function receives the size of the vectors as parameter. If none provided,
- * it will use 200000 as default 
- */
-int main(int argc, char* argv[]){
-	// Standard MPI initializers	
-	MPI_Init(&argc, &argv);
-	int world_rank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-	int world_size;
-	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-	
-	unsigned int INPUT_SIZE = 200000;
-	//check if a size was given
-	if(argc >= 2){
-		//Using sstream to convert the value
-		istringstream ss(argv[1]);
-		if(!(ss >> INPUT_SIZE))
-			cerr << "1st argument should be a positive integer" << endl;
-	}
+void scatter_gather(unsigned const int INPUT_SIZE, const int world_size, int world_rank){	
 	int limit = INPUT_SIZE/world_size;
 
 	//Pointers used by the root process to scatter the data
@@ -90,7 +75,42 @@ int main(int argc, char* argv[]){
 		}
 		cout << "Result: " << result << endl;
 	}		
+}
+
+/*
+ * This function receives the size of the vectors as parameter. If none provided,
+ * it will use 200000 as default 
+ */
+int main(int argc, char* argv[]){
+	// Standard MPI initializers	
+	MPI_Init(&argc, &argv);
+
+	int world_rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+	int world_size;
+	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+	
+	unsigned int input_size = 200000;
+	int choice = 0;
+	//check if a size was given
+	if(argc >= 3){
+		//Using sstream to convert the value
+		stringstream ss;
+		ss << argv[1] << ' ' << argv[2];
+		if(!(ss >> choice))
+			cerr << "1st argument should be 2 for scatter, 3 for isend or any other integer for default send" << endl;
+		if(!(ss >> input_size))
+			cerr << "2nd argument should be a positive integer, because that is going to be the size of your vectors" << endl;
+	}
+	
+	switch(choice){
+	case SCATTER:
+		scatter_gather(input_size, world_size, world_rank);
+		break;
+	default:
+		cout << "(No arguments or default send choosen)" << endl;
+	}
 	MPI_Finalize();
 	return 0;
 }
-
