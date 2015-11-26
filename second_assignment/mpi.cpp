@@ -183,11 +183,13 @@ int main(int argc, char* argv[]){
 		if(!(ss >> input_size))
 			cerr << "2nd argument should be a positive integer (size of your vectors)" << endl;
 	} else if (world_rank == 0){
+		cout << "****************" << endl;
 		cout << "No arguments found for the program." << endl;
-		cout << "Running it with default configurations (block send and 200000 as vector size." << endl;	
-		cout << "To change the settings pass:" << endl;
-		cout << "1, 2 or 3 as first param to choose the MPI protocol (send, scatter or isend, respectively)" << endl;
-		cout << "A positive integer as second param to be your vector size" << endl;
+		cout << "Running it with default configurations (block send and 200000 as vector size)" << endl;	
+		cout << "To change these settings pass:" << endl;
+		cout << "1, 2 or 3 as first param to choose the MPI protocol (send, scatter or isend, respectively);" << endl;
+		cout << "A positive integer as second param to be your vector size;" << endl;
+		cout << "****************" << endl << endl;
 	}
 	
 	switch(choice){
