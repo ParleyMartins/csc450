@@ -9,9 +9,10 @@
 #include <mpi.h>
 #include <sstream>
 
-#define DEFAULT_SEND 1
+#define MPI_TAG 1
+
 #define SCATTER 2
-#define ISEND
+#define ISEND 3
 
 using namespace std;
 /*
@@ -77,6 +78,34 @@ void scatter_gather(unsigned const int INPUT_SIZE, const int world_size, int wor
 	}		
 }
 
+void isend(unsigned const int INPUT_SIZE, const int world_size, int world_rank){	
+	int limit = INPUT_SIZE/world_size;
+
+	//Pointers used by the root process to scatter the data
+	double* vector1 = NULL;
+	double* vector2 = NULL;
+
+	
+	if(world_rank == world_size - 1) {
+		//The first process initializes the values of all the arrays.
+		vector1 = generate_random_array(INPUT_SIZE, 1, 1);
+		vector2 = generate_random_array(INPUT_SIZE, 1, 1);
+
+		for(int i = 0; i < world_rank; i++){
+			MPI_Request request;
+			MPI_Isend(&vector1 + (i*limit), limit, MPI_DOUBLE, i, MPI_TAG, MPI_COMM_WORLD, &request);
+			MPI_Isend(&vector2 + (i*limit), limit, MPI_DOUBLE, i, MPI_TAG, MPI_COMM_WORLD, &request);
+		}
+	} else {
+
+		double* partial_v1 = (double *) malloc(sizeof(double) * limit);
+		double* partial_v2 = (double *) malloc(sizeof(double) * limit);
+
+		double partial_result = multiply(limit, partial_v1, partial_v2);
+		cout << partial_result << endl;
+	}
+}
+
 /*
  * This function receives the size of the vectors as parameter. If none provided,
  * it will use 200000 as default 
@@ -105,11 +134,14 @@ int main(int argc, char* argv[]){
 	}
 	
 	switch(choice){
-	case SCATTER:
-		scatter_gather(input_size, world_size, world_rank);
-		break;
-	default:
-		cout << "(No arguments or default send choosen)" << endl;
+		case SCATTER:
+			scatter_gather(input_size, world_size, world_rank);
+			break;
+		case ISEND:
+			isend(input_size, world_size, world_rank);
+			break;
+		default:
+			cout << "(No arguments or default send choosen)" << endl;
 	}
 	MPI_Finalize();
 	return 0;
