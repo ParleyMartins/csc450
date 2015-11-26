@@ -101,9 +101,12 @@ void send(unsigned const int INPUT_SIZE, const int world_size, int world_rank){
 	double* vector1 = NULL;
 	double* vector2 = NULL;
 
-	
+	/*
+	 * The last process was chosen as root because it's easier to iterate through the last portion of the array
+	 * because of uneven division. So the last process handles all the data left.
+	 */
 	if(world_rank == world_size - 1) {
-		//The first process initializes the values of all the arrays.
+		//The root process initializes the values of all the arrays.
 		vector1 = generate_random_array(INPUT_SIZE, 1, 1);
 		vector2 = generate_random_array(INPUT_SIZE, 1, 1);
 
