@@ -46,8 +46,8 @@ double* generate_random_array(int size, int bottom_limit, int upper_limit){
 
 /*
  * Multiplies the partial vectors. To avoid global variables, receives both vectors and the size.
- * The start point is for the root process, that has both entire vectors. Since the division is not always exact,
- * the root starts in the last sent point and goes all the way to the end to ensure correctness.
+ * The start point is for the root process, that has all the data in both vectors. Since the division is not always exact,
+ * the root start point is the last value sent and it goes all the way to the end to ensure correctness.
  */
 double multiply(int size, double* vector1, double* vector2, int start = 0){
 	double partial_result = 0;
@@ -88,11 +88,12 @@ void scatter_gather(unsigned const int INPUT_SIZE, const int world_size, int wor
 	}
 	sendcounts[world_size - 1] = INPUT_SIZE - displacements[world_size - 1];
 	
-	double* partial_v1 = (double *) malloc(sizeof(double) * sendcounts[world_size - 1]);
-	double* partial_v2 = (double *) malloc(sizeof(double) * sendcounts[world_size - 1]);
+	double* partial_v1 = (double *) malloc(sizeof(double) * sendcounts[world_rank]);
+	double* partial_v2 = (double *) malloc(sizeof(double) * sendcounts[world_rank]);
 	//0 is the root process
 	MPI_Scatterv(vector1, sendcounts, displacements, MPI_DOUBLE, partial_v1, sendcounts[world_rank], MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Scatterv(vector2, sendcounts, displacements, MPI_DOUBLE, partial_v2, sendcounts[world_rank], MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
 	double partial_result = multiply(sendcounts[world_rank], partial_v1, partial_v2);
 	// 1 is the amount of data being passed and 0 is the root process in this call
 	MPI_Gather(&partial_result, 1, MPI_DOUBLE, partial_results, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
