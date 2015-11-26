@@ -131,9 +131,17 @@ void isend(unsigned const int INPUT_SIZE, const int world_size, int world_rank){
 		vector2 = generate_random_array(INPUT_SIZE, 1, 1);
 
 		for(int i = 0; i < world_rank; i++){
-			MPI_Send(vector1 + (i*limit), limit, MPI_DOUBLE, i, V1_TAG, MPI_COMM_WORLD);
-			MPI_Send(vector2 + (i*limit), limit, MPI_DOUBLE, i, V2_TAG, MPI_COMM_WORLD);
+			MPI_Request request;
+			MPI_Isend(vector1 + (i*limit), limit, MPI_DOUBLE, i, V1_TAG, MPI_COMM_WORLD, &request);
+			MPI_Isend(vector2 + (i*limit), limit, MPI_DOUBLE, i, V2_TAG, MPI_COMM_WORLD, &request);
 		}
+		double result = multiply(INPUT_SIZE, vector1, vector2, world_rank*limit);
+		for(int i = 0; i < world_rank; i++){
+			double partial_result = 0;
+			MPI_Recv(&partial_result, 1, MPI_DOUBLE, i, R_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			result += partial_result;
+		}
+		cout << "Result: " << result << endl;
 	} else {
 
 		double* partial_v1 = (double *) malloc(sizeof(double) * limit);
@@ -142,7 +150,8 @@ void isend(unsigned const int INPUT_SIZE, const int world_size, int world_rank){
 		MPI_Recv(partial_v1, limit, MPI_DOUBLE, world_size - 1, V1_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		MPI_Recv(partial_v2, limit, MPI_DOUBLE, world_size - 1, V2_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		double partial_result = multiply(limit, partial_v1, partial_v2);
-		cout << partial_result << endl;	
+		MPI_Request request;
+		MPI_Isend(&partial_result, 1, MPI_DOUBLE, world_size - 1, R_TAG, MPI_COMM_WORLD, &request);
 	}
 }
 
