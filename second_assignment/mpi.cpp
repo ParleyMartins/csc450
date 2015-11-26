@@ -9,7 +9,9 @@
 #include <mpi.h>
 #include <sstream>
 
-#define MPI_TAG 1
+#define V1_TAG 10
+#define V2_TAG 20
+#define R_TAG 30
 
 #define SCATTER 2
 #define ISEND 3
@@ -33,9 +35,9 @@ double* generate_random_array(int size, int bottom_limit, int upper_limit){
 /*
  * Multiplies the partial vectors. To avoid global variables, receives both vectors and the size.
  */
-double multiply(int size, double* vector1, double* vector2){
+double multiply(int size, double* vector1, double* vector2, int start = 0){
 	double partial_result = 0;
-	for(int i = 0; i < size; i++){
+	for(int i = start; i < size; i++){
 		partial_result += (vector1[i] * vector2[i]);
 	}
 	return partial_result;
@@ -78,6 +80,43 @@ void scatter_gather(unsigned const int INPUT_SIZE, const int world_size, int wor
 	}		
 }
 
+void send(unsigned const int INPUT_SIZE, const int world_size, int world_rank){	
+	int limit = INPUT_SIZE/world_size;
+
+	//Pointers used by the root process to scatter the data
+	double* vector1 = NULL;
+	double* vector2 = NULL;
+
+	
+	if(world_rank == world_size - 1) {
+		//The first process initializes the values of all the arrays.
+		vector1 = generate_random_array(INPUT_SIZE, 1, 1);
+		vector2 = generate_random_array(INPUT_SIZE, 1, 1);
+
+		for(int i = 0; i < world_rank; i++){
+			MPI_Send(vector1 + (i*limit), limit, MPI_DOUBLE, i, V1_TAG, MPI_COMM_WORLD);
+			MPI_Send(vector2 + (i*limit), limit, MPI_DOUBLE, i, V2_TAG, MPI_COMM_WORLD);
+		}
+		double result = multiply(INPUT_SIZE, vector1, vector2, world_rank*limit);
+		
+		for(int i = 0; i < world_rank; i++){
+			double partial_result = 0;
+			MPI_Recv(&partial_result, 1, MPI_DOUBLE, i, R_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			result += partial_result;
+		}
+		cout << "Result: " << result << endl;
+	} else {
+		double* partial_v1 = (double *) malloc(sizeof(double) * limit);
+		double* partial_v2 = (double *) malloc(sizeof(double) * limit);
+
+		MPI_Recv(partial_v1, limit, MPI_DOUBLE, world_size - 1, V1_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Recv(partial_v2, limit, MPI_DOUBLE, world_size - 1, V2_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		double partial_result = multiply(limit, partial_v1, partial_v2);
+		MPI_Send(&partial_result, 1, MPI_DOUBLE, world_size - 1, R_TAG, MPI_COMM_WORLD);
+	}
+}
+
+
 void isend(unsigned const int INPUT_SIZE, const int world_size, int world_rank){	
 	int limit = INPUT_SIZE/world_size;
 
@@ -92,19 +131,22 @@ void isend(unsigned const int INPUT_SIZE, const int world_size, int world_rank){
 		vector2 = generate_random_array(INPUT_SIZE, 1, 1);
 
 		for(int i = 0; i < world_rank; i++){
-			MPI_Request request;
-			MPI_Isend(&vector1 + (i*limit), limit, MPI_DOUBLE, i, MPI_TAG, MPI_COMM_WORLD, &request);
-			MPI_Isend(&vector2 + (i*limit), limit, MPI_DOUBLE, i, MPI_TAG, MPI_COMM_WORLD, &request);
+			MPI_Send(vector1 + (i*limit), limit, MPI_DOUBLE, i, V1_TAG, MPI_COMM_WORLD);
+			MPI_Send(vector2 + (i*limit), limit, MPI_DOUBLE, i, V2_TAG, MPI_COMM_WORLD);
 		}
 	} else {
 
 		double* partial_v1 = (double *) malloc(sizeof(double) * limit);
 		double* partial_v2 = (double *) malloc(sizeof(double) * limit);
 
+		MPI_Recv(partial_v1, limit, MPI_DOUBLE, world_size - 1, V1_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Recv(partial_v2, limit, MPI_DOUBLE, world_size - 1, V2_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		double partial_result = multiply(limit, partial_v1, partial_v2);
-		cout << partial_result << endl;
+		cout << partial_result << endl;	
 	}
 }
+
+
 
 /*
  * This function receives the size of the vectors as parameter. If none provided,
@@ -142,6 +184,7 @@ int main(int argc, char* argv[]){
 			break;
 		default:
 			cout << "(No arguments or default send choosen)" << endl;
+			send(input_size, world_size, world_rank);
 	}
 	MPI_Finalize();
 	return 0;
