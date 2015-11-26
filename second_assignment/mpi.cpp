@@ -74,7 +74,11 @@ void scatter_gather(unsigned const int INPUT_SIZE, const int world_size, int wor
 		partial_results = (double *) malloc(sizeof(double) * world_size);
 	}
 
-
+	/*
+ 	* Because the size of the input may not be divisible by the number of processes, it's used the Scatterv function
+ 	* that sends different amounts of data to each process. The same thought of the default send is applied and the last
+ 	* process receives the bigger data.
+ 	*/
 	int* sendcounts = (int *) malloc(sizeof(int) * world_size);
 	int* displacements = (int *) malloc(sizeof(int) * world_size);
 	
