@@ -158,11 +158,11 @@ void isend(unsigned const int INPUT_SIZE, const int world_size, int world_rank){
 
 
 /*
- * This function receives the size of the vectors as parameter. If none provided,
- * it will use 200000 as default 
+ * This function receives the send protocol and the size of the vectors. 
+ * If none provided, it will use 200000 and send (blocking) as default.
  */
 int main(int argc, char* argv[]){
-	// Standard MPI initializers	
+	// Standard MPI initializers
 	MPI_Init(&argc, &argv);
 
 	int world_rank;
@@ -179,9 +179,15 @@ int main(int argc, char* argv[]){
 		stringstream ss;
 		ss << argv[1] << ' ' << argv[2];
 		if(!(ss >> choice))
-			cerr << "1st argument should be 2 for scatter, 3 for isend or any other integer for default send" << endl;
+			cerr << "1st argument should be the mpi protocol to be used (1, 2, 3)" << endl;
 		if(!(ss >> input_size))
-			cerr << "2nd argument should be a positive integer, because that is going to be the size of your vectors" << endl;
+			cerr << "2nd argument should be a positive integer (size of your vectors)" << endl;
+	} else if (world_rank == 0){
+		cout << "No arguments found for the program." << endl;
+		cout << "Running it with default configurations (block send and 200000 as vector size." << endl;	
+		cout << "To change the settings pass:" << endl;
+		cout << "1, 2 or 3 as first param to choose the MPI protocol (send, scatter or isend, respectively)" << endl;
+		cout << "A positive integer as second param to be your vector size" << endl;
 	}
 	
 	switch(choice){
@@ -192,7 +198,6 @@ int main(int argc, char* argv[]){
 			isend(input_size, world_size, world_rank);
 			break;
 		default:
-			cout << "(No arguments or default send choosen)" << endl;
 			send(input_size, world_size, world_rank);
 	}
 	MPI_Finalize();
