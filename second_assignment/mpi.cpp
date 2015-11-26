@@ -9,16 +9,28 @@
 #include <mpi.h>
 #include <sstream>
 
+/*
+ * Used three different tags to ensure that the receive functions
+ * would get only what it was suppose to i wach turn.
+ * V1 for first vector
+ * V2 for second vector
+ * R for result
+ */
 #define V1_TAG 10
 #define V2_TAG 20
 #define R_TAG 30
 
+/*
+ * Define these constants to avoid using meaningless numbers in the code
+ */
 #define SCATTER 2
 #define ISEND 3
 
 using namespace std;
 /*
- * Generates random array (using c++11 library) within given limits
+ * Generates random double array (using c++11 library) within given limits
+ * To ensure correctnes of the program, it was passed 1 as both limits, generating two vectors filled with 1.
+ * The multiplication should generate a correct value, which happened successfully
   */
 double* generate_random_array(int size, int bottom_limit, int upper_limit){
 	random_device rd;
@@ -137,18 +149,20 @@ void isend(unsigned const int INPUT_SIZE, const int world_size, int world_rank){
 		}
 		double result = multiply(INPUT_SIZE, vector1, vector2, world_rank*limit);
 		for(int i = 0; i < world_rank; i++){
+			//Since the receive function uses a pointer, I had to create a new variable here to receive it
 			double partial_result = 0;
 			MPI_Recv(&partial_result, 1, MPI_DOUBLE, i, R_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			result += partial_result;
 		}
 		cout << "Result: " << result << endl;
 	} else {
-
+		//Buffers to receive the partial vector send by last process
 		double* partial_v1 = (double *) malloc(sizeof(double) * limit);
 		double* partial_v2 = (double *) malloc(sizeof(double) * limit);
-
 		MPI_Recv(partial_v1, limit, MPI_DOUBLE, world_size - 1, V1_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		MPI_Recv(partial_v2, limit, MPI_DOUBLE, world_size - 1, V2_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	
+		//Store the partial result to send to last process sum	
 		double partial_result = multiply(limit, partial_v1, partial_v2);
 		MPI_Request request;
 		MPI_Isend(&partial_result, 1, MPI_DOUBLE, world_size - 1, R_TAG, MPI_COMM_WORLD, &request);
