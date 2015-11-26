@@ -46,6 +46,8 @@ double* generate_random_array(int size, int bottom_limit, int upper_limit){
 
 /*
  * Multiplies the partial vectors. To avoid global variables, receives both vectors and the size.
+ * The start point is for the root process, that has both entire vectors. Since the division is not always exact,
+ * the root starts in the last sent point and goes all the way to the end to ensure correctness.
  */
 double multiply(int size, double* vector1, double* vector2, int start = 0){
 	double partial_result = 0;
