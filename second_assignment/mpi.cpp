@@ -74,14 +74,22 @@ void scatter_gather(unsigned const int INPUT_SIZE, const int world_size, int wor
 		partial_results = (double *) malloc(sizeof(double) * world_size);
 	}
 
-	double* partial_v1 = (double *) malloc(sizeof(double) * limit);
-	double* partial_v2 = (double *) malloc(sizeof(double) * limit);
 
+	int* sendcounts = (int *) malloc(sizeof(int) * world_size);
+	int* displacements = (int *) malloc(sizeof(int) * world_size);
+	
+	for(int i = 0; i < world_size; i++){
+		sendcounts[i] = limit;
+		displacements[i] = i*limit;
+	}
+	sendcounts[world_size - 1] = INPUT_SIZE - displacements[world_size - 1];
+	
+	double* partial_v1 = (double *) malloc(sizeof(double) * sendcounts[world_size - 1]);
+	double* partial_v2 = (double *) malloc(sizeof(double) * sendcounts[world_size - 1]);
 	//0 is the root process
-	MPI_Scatter(vector1, limit, MPI_DOUBLE, partial_v1, limit, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	MPI_Scatter(vector2, limit, MPI_DOUBLE, partial_v2, limit, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-	double partial_result = multiply(limit, partial_v1, partial_v2);
+	MPI_Scatterv(vector1, sendcounts, displacements, MPI_DOUBLE, partial_v1, sendcounts[world_rank], MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	MPI_Scatterv(vector2, sendcounts, displacements, MPI_DOUBLE, partial_v2, sendcounts[world_rank], MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	double partial_result = multiply(sendcounts[world_rank], partial_v1, partial_v2);
 	// 1 is the amount of data being passed and 0 is the root process in this call
 	MPI_Gather(&partial_result, 1, MPI_DOUBLE, partial_results, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
